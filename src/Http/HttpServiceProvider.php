@@ -10,17 +10,21 @@ namespace Ecfectus\Framework\Http;
 
 
 use Ecfectus\Container\ServiceProvider\AbstractServiceProvider;
+use Ecfectus\Router\Router;
+use FastRoute\RouteParser\Std;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Zend\Diactoros\Response;
 use Zend\Diactoros\ServerRequestFactory;
+use FastRoute\DataGenerator\GroupCountBased;
 
 class HttpServiceProvider extends AbstractServiceProvider
 {
 
     public $provides = [
         ServerRequestInterface::class,
-        ResponseInterface::class
+        ResponseInterface::class,
+        Router::class
     ];
 
     public function register(){
@@ -30,6 +34,10 @@ class HttpServiceProvider extends AbstractServiceProvider
 
         $this->bind(ResponseInterface::class, function(){
             return new Response();
+        });
+
+        $this->bind(Router::class, function(){
+            return new Router(new Std(), new GroupCountBased());
         });
     }
 
