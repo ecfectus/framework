@@ -19,6 +19,8 @@ class Kernel
 
     public function __construct(Application $app){
         $this->app = $app;
+
+        $this->bootstrap();
     }
 
     private function bootstrap(){
@@ -28,8 +30,6 @@ class Kernel
     }
 
     public function handle(RequestInterface $request, ResponseInterface $response){
-
-        $this->bootstrap();
 
         print_r($this);
     }
