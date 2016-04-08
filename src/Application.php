@@ -62,7 +62,7 @@ class Application extends Container
             $this->addServiceProvider($provider);
         }
 
-        $this->bootstrapServiceProviders();
+        $this->bootServiceProviders();
     }
 
 
