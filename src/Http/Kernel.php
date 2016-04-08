@@ -44,7 +44,21 @@ class Kernel
 
         $route = $router->matchRequest($request);
 
-        $request = $request->withAttribute('route', $route);
+        switch($route[0]){
+            case 0:
+                $response = $response->withStatus(404);
+                break;
+            case 1:
+                $request = $request->withAttribute('route', $route[1]);
+                foreach((array) $route[2] as $key => $val){
+                    $request = $request->withAttribute($key, $val);
+                }
+                break;
+            case 2:
+                $response = $response->withStatus(405)->withHeader('Allow', implode(', ', $route[1]));
+                break;
+        }
+
 
         $this->runner = new Runner($this->middleware);
 
@@ -53,8 +67,7 @@ class Kernel
 
         $this->runner->addMiddleware(function($request, $response, $next) {
 
-
-            return $response->getBody()->write(print_r($request->getAttribute('route'), true));
+            return $response->getBody()->write(print_r($request, true));
         });
 
         $this->server = new Server(function($request, $response, $done){
