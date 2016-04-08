@@ -19,14 +19,6 @@ class Kernel
 
     public function __construct(Application $app){
         $this->app = $app;
-
-        $this->bootstrap();
-    }
-
-    private function bootstrap(){
-        if (! $this->app->hasBeenBootstrapped()) {
-            $this->app->bootstrap();
-        }
     }
 
     public function handle(RequestInterface $request, ResponseInterface $response){

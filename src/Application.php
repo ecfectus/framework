@@ -54,6 +54,10 @@ class Application extends Container
 
     public function bootstrap(){
 
+        if($this->hasBeenBootstrapped()){
+            return;
+        }
+
         $this->hasBeenBootstrapped = true;
 
         $providers = $this->get(RepositoryInterface::class)->get('app.providers');
