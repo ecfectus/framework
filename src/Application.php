@@ -18,6 +18,8 @@ use Interop\Container\ContainerInterface;
 class Application extends Container
 {
 
+    protected $hasBeenBootstrapped = false;
+
     public function __construct($path = ''){
 
         $this->delegate(new ServiceProviderContainer());
@@ -38,5 +40,23 @@ class Application extends Container
         // add config service provider as everything else will rely on it
         $this->addServiceProvider(ConfigServiceProvider::class);
     }
+
+    /**
+     * Determine if the application has been bootstrapped before.
+     *
+     * @return bool
+     */
+    public function hasBeenBootstrapped()
+    {
+        return $this->hasBeenBootstrapped;
+    }
+
+    public function bootstrap(){
+
+        $this->hasBeenBootstrapped = true;
+
+        $this->bootstrapServiceProviders();
+    }
+
 
 }
