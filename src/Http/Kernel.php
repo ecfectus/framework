@@ -28,6 +28,16 @@ class Kernel
         $this->app = $app;
     }
 
+    public function pushMiddleware($middleware){
+        $this->middleware[] = $middleware;
+        return $this;
+    }
+
+    public function prependMiddleware($middleware){
+        array_unshift($this->middleware, $middleware);
+        return $this;
+    }
+
     public function handle(RequestInterface $request, ResponseInterface $response){
 
         $router = $this->app->get(Router::class);
