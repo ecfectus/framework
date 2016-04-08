@@ -1,0 +1,46 @@
+{
+    "name": "ecfectus/framework",
+    "description": "The Ecfectus Framework",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "leemason",
+            "email": "contact@nohalfpixels.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/ecfectus/container"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/ecfectus/config"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/ecfectus/router"
+        }
+    ],
+    "require": {
+        "ecfectus/container": "dev-master",
+        "ecfectus/config": "dev-master",
+        "ecfectus/router": "dev-master",
+        "zendframework/zend-diactoros": "~1.3@dev"
+    },
+    "require-dev": {
+        "phpunit/phpunit" : "4.*",
+        "fabpot/php-cs-fixer": "~1.10"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ecfectus\\Framework\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Ecfectus\\Framework\\Test\\": "tests"
+        }
+    }
+}
