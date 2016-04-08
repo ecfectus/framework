@@ -22,8 +22,6 @@ class Kernel
 
     protected $server;
 
-    protected $runner;
-
     public function __construct(Application $app){
         $this->app = $app;
     }
@@ -45,7 +43,9 @@ class Kernel
 
         $this->server = new Server(function($request, $response, $done){
 
-            return $this->runner($request, $response);
+            $runner = $this->runner;
+
+            return $runner($request, $response);
 
             //$response = $response->getBody()->write('it works!');
 
