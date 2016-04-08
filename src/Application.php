@@ -9,6 +9,7 @@
 namespace Ecfectus\Framework;
 
 
+use Ecfectus\Config\RepositoryInterface;
 use Ecfectus\Container\Container;
 use Ecfectus\Container\ReflectionContainer;
 use Ecfectus\Container\ServiceProviderContainer;
@@ -54,6 +55,12 @@ class Application extends Container
     public function bootstrap(){
 
         $this->hasBeenBootstrapped = true;
+
+        $providers = $this->get(RepositoryInterface::class)->get('app.providers');
+
+        foreach($providers as $provider){
+            $this->addServiceProvider($provider);
+        }
 
         $this->bootstrapServiceProviders();
     }
