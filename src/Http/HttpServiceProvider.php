@@ -36,7 +36,7 @@ class HttpServiceProvider extends AbstractServiceProvider
             return new Response();
         });
 
-        $this->bind(Router::class, function(){
+        $this->share(Router::class, function(){
             return new Router(new Std(), new GroupCountBased());
         });
     }
