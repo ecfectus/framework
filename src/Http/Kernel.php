@@ -38,7 +38,7 @@ class Kernel
 
             $route = $router->matchRequest($request);
 
-            return $response->getBody()->write(print_r($route, true));
+            return $response->getBody()->write(print_r([$request, $response, $route], true));
         });
 
         $this->server = new Server(function($request, $response, $done){
