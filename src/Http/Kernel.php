@@ -40,6 +40,8 @@ class Kernel
 
     public function handle(RequestInterface $request, ResponseInterface $response){
 
+        //first we find the route, and if not set the status codes
+
         $router = $this->app->get(Router::class);
 
         $route = $router->matchRequest($request);
@@ -59,6 +61,7 @@ class Kernel
                 break;
         }
 
+        // then we create the middleware runner
 
         $this->runner = new Runner($this->middleware);
 
@@ -69,6 +72,8 @@ class Kernel
 
             return $response->getBody()->write(print_r($request, true));
         });
+
+        // and run the middlewares against the request
 
         $this->server = new Server(function($request, $response, $done){
 
