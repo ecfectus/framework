@@ -12,10 +12,13 @@ namespace Ecfectus\Framework\Http;
 use Ecfectus\Framework\Application;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Zend\Diactoros\Server;
 
 class Kernel
 {
     protected $app;
+
+    protected $server;
 
     public function __construct(Application $app){
         $this->app = $app;
@@ -23,6 +26,13 @@ class Kernel
 
     public function handle(RequestInterface $request, ResponseInterface $response){
 
-        print_r($this);
+        $this->server = new Server(function($request, $response, $done){
+
+            $response->getBody()->write('it works!');
+            
+        }, $request, $response);
+
+
+        $this->server->listen();
     }
 }
