@@ -22,23 +22,29 @@ class Kernel
 
     protected $server;
 
+    protected $middleware = [];
+
     public function __construct(Application $app){
         $this->app = $app;
     }
 
     public function handle(RequestInterface $request, ResponseInterface $response){
 
-        $this->runner = $this->app->get(Runner::class);
+        $router = $this->app->get(Router::class);
+
+        $route = $router->matchRequest($request);
+
+        $request = $request->withAttribute('route', $route);
+
+        $this->runner = new Runner($this->middleware);
 
         $this->runner->setContainer($this->app);
 
-        $router = $this->app->get(Router::class);
 
-        $this->runner->addMiddleware(function($request, $response, $next) use ($router) {
+        $this->runner->addMiddleware(function($request, $response, $next) {
 
-            $route = $router->matchRequest($request);
 
-            return $response->getBody()->write(print_r([$request, $response, $route], true));
+            return $response->getBody()->write(print_r($request->getAttribute('route'), true));
         });
 
         $this->server = new Server(function($request, $response, $done){
@@ -46,10 +52,6 @@ class Kernel
             $runner = $this->runner;
 
             return $runner($request, $response);
-
-            //$response = $response->getBody()->write('it works!');
-
-            //return $response;
 
         }, $request, $response);
 
