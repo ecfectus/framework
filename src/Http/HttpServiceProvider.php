@@ -18,6 +18,11 @@ use Zend\Diactoros\ServerRequestFactory;
 class HttpServiceProvider extends AbstractServiceProvider
 {
 
+    public $provides = [
+        ServerRequestInterface::class,
+        ResponseInterface::class
+    ];
+
     public function register(){
         $this->bind(ServerRequestInterface::class, function(){
            return ServerRequestFactory::fromGlobals();
