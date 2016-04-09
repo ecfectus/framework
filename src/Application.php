@@ -181,9 +181,9 @@ class Application extends Container
 
         $response = $this->get(ResponseInterface::class);
 
-        
+
         // add route matching after bootstrap
-        $this->queue->add(0, function($request, $response, $next){
+        $this->queue->add(0, ['/', function($request, $response, $next){
 
             $router = $this->get(Router::class);
 
@@ -211,7 +211,7 @@ class Application extends Container
             }
 
             return $next($request, $response);
-        });
+        }]);
 
         $server = new Server($this, $request, $response);
 
