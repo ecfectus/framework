@@ -9,30 +9,12 @@
         }
     ],
     "minimum-stability": "dev",
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/ecfectus/container"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/ecfectus/config"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/ecfectus/router"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/ecfectus/middleware-runner"
-        }
-    ],
     "require": {
-        "ecfectus/container": "dev-master",
-        "ecfectus/config": "dev-master",
-        "ecfectus/router": "dev-master",
-        "ecfectus/middleware-runner": "dev-master",
-        "zendframework/zend-diactoros": "~1.3@dev"
+        "container-interop/container-interop": "^1.1",
+        "zendframework/zend-diactoros": "~1.3@dev",
+        "nikic/fast-route": "dev-master",
+        "anahkiasen/underscore-php": "dev-master",
+        "psr/http-message": "~1.0@dev"
     },
     "require-dev": {
         "phpunit/phpunit" : "4.*",
@@ -40,12 +22,15 @@
     },
     "autoload": {
         "psr-4": {
-            "Ecfectus\\Framework\\": "src"
+            "Ecfectus\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Ecfectus\\Framework\\Test\\": "tests"
+            "Ecfectus\\Test\\": "tests"
         }
+    },
+    "provide": {
+        "container-interop/container-interop-implementation": "^1.1"
     }
 }

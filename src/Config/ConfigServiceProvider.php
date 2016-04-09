@@ -6,11 +6,8 @@
  * Time: 19:53
  */
 
-namespace Ecfectus\Framework\Config;
+namespace Ecfectus\Config;
 
-use Ecfectus\Config\FileLoader;
-use Ecfectus\Config\Repository;
-use Ecfectus\Config\RepositoryInterface;
 use Ecfectus\Container\ServiceProvider\AbstractServiceProvider;
 
 class ConfigServiceProvider extends AbstractServiceProvider
