@@ -77,8 +77,8 @@ class Runner
         if(is_string($entry) && strpos($entry, '@') !== false){
             list($class, $method) = explode('@', $entry);
             $instance = $this->resolve($class);
-            return function($request, $response, $next) use ($instance, $method){
-                return $instance->$method($request, $response, $next);
+            return function(...$arguments) use ($instance, $method){
+                return $instance->$method(...$arguments);
             };
         }
 
