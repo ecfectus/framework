@@ -179,36 +179,42 @@ class Application extends Container
 
         $response = $this->get(ResponseInterface::class);
 
+        // add bootstrap as first queue callback
+        $this->queue->add(0, function($request, $response, $next){
+            $this->bootstrap();
+            return $next($request, $response);
+        });
 
+        // add route matching after bootstrap
+        $this->queue->add(1, function($request, $response, $next){
 
+            $router = $this->get(Router::class);
 
+            $route = $router->matchRequest($request);
 
-        $router = $this->get(Router::class);
+            switch($route[0]){
+                case 0:
+                    $response = $response->withStatus(404);
+                    break;
+                case 1:
+                    $request = $request->withAttribute('route', $route[1]);
+                    foreach((array) $route[2] as $key => $val){
+                        $request = $request->withAttribute($key, $val);
+                    }
+                    //add any route middleware
+                    foreach($route[1]->getMiddleware() as $middleware){
+                        $this->push($middleware);
+                    }
+                    //then finally add the route handler
+                    $this->push($route[1]->getCallable());
+                    break;
+                case 2:
+                    $response = $response->withStatus(405)->withHeader('Allow', implode(', ', $route[1]));
+                    break;
+            }
 
-        $route = $router->matchRequest($request);
-
-        switch($route[0]){
-            case 0:
-                $response = $response->withStatus(404);
-                break;
-            case 1:
-                $request = $request->withAttribute('route', $route[1]);
-                foreach((array) $route[2] as $key => $val){
-                    $request = $request->withAttribute($key, $val);
-                }
-                //add any route middleware
-                foreach($route[1]->getMiddleware() as $middleware){
-                    $this->push($middleware);
-                }
-                //then finally add the route handler
-                $this->push($route[1]->getCallable());
-                break;
-            case 2:
-                $response = $response->withStatus(405)->withHeader('Allow', implode(', ', $route[1]));
-                break;
-        }
-
-
+            return $next($request, $response);
+        });
 
         $server = new Server($this, $request, $response);
 
