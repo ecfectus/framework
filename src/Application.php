@@ -172,8 +172,9 @@ class Application extends Container
         $this->bootServiceProviders();
     }
 
-
     public function listen(){
+
+        echo 'working';
 
         $this->bootstrap();
 
