@@ -183,7 +183,7 @@ class Application extends Container
 
 
         // add route matching after bootstrap
-        $this->queue->add(0, ['/', function($request, $response, $next){
+        $this->queue->add(0, ['path' => '/', 'middleware' => function($request, $response, $next){
 
             $router = $this->get(Router::class);
 
