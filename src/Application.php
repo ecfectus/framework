@@ -13,7 +13,7 @@ use Ecfectus\Config\RepositoryInterface;
 use Ecfectus\Container\Container;
 use Ecfectus\Container\ReflectionContainer;
 use Ecfectus\Container\ServiceProviderContainer;
-use Ecfectus\Framework\Config\ConfigServiceProvider;
+use Ecfectus\Config\ConfigServiceProvider;
 use Interop\Container\ContainerInterface;
 
 class Application extends Container
