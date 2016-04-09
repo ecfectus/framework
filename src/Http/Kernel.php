@@ -65,7 +65,7 @@ class Kernel
                     $this->runner->addMiddleware($middleware);
                 }
                 //then finally add the route handler
-                $this->addRouteHandler($route[1]);
+                $this->runner->addMiddleware($route[1]->getCallable());
                 break;
             case 2:
                 $response = $response->withStatus(405)->withHeader('Allow', implode(', ', $route[1]));
@@ -86,24 +86,5 @@ class Kernel
 
 
         $this->server->listen();
-    }
-
-    private function addRouteHandler(Route $route){
-        $callable = $route->getCallable();
-
-        if(strpos($callable, '@') !== false){
-
-            list($class, $method) = explode('@', $callable);
-
-            $this->pushMiddleware(function($request, $response, $next) use ($class, $method){
-                $instance = $this->app->get($class);
-                return $instance->$method($request, $response, $next);
-            });
-
-            return;
-        }
-
-        $this->pushMiddleware($callable);
-
     }
 }

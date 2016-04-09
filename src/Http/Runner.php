@@ -74,6 +74,14 @@ class Runner
             };
         }
 
+        if(strpos($entry, '@') !== false){
+            list($class, $method) = explode('@', $entry);
+            $instance = $this->resolve($class);
+            return function($request, $response, $next) use ($instance, $method){
+                return $instance->$method($request, $response, $next);
+            };
+        }
+
         if(is_callable($entry)){
             return $entry;
         }
