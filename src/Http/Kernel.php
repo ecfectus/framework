@@ -6,11 +6,11 @@
  * Time: 19:43
  */
 
-namespace Ecfectus\Framework\Http;
+namespace Ecfectus\Http;
 
 
-use Ecfectus\Framework\Application;
-use Ecfectus\MiddlewareRunner\Runner;
+use Ecfectus\Application;
+use Ecfectus\Http\Runner;
 use Ecfectus\Router\Router;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;

@@ -6,7 +6,7 @@
  * Time: 20:59
  */
 
-namespace Ecfectus\Framework\Http;
+namespace Ecfectus\Http;
 
 
 use Ecfectus\Container\ServiceProvider\AbstractServiceProvider;
