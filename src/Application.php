@@ -105,7 +105,7 @@ class Application extends Container
             return $this($request, $response, $this);
         }
 
-        $middleware = $this->resolve($entry);
+        $middleware = $this->resolve($entry['middleware']);
 
         return $middleware($request, $response, $this);
     }
