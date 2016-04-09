@@ -175,18 +175,15 @@ class Application extends Container
 
     public function listen(){
 
+        $this->bootstrap();
+
         $request = $this->get(ServerRequestInterface::class);
 
         $response = $this->get(ResponseInterface::class);
 
-        // add bootstrap as first queue callback
-        $this->queue->add(0, function($request, $response, $next){
-            $this->bootstrap();
-            return $next($request, $response);
-        });
-
+        
         // add route matching after bootstrap
-        $this->queue->add(1, function($request, $response, $next){
+        $this->queue->add(0, function($request, $response, $next){
 
             $router = $this->get(Router::class);
 
