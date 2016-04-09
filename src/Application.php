@@ -77,7 +77,7 @@ class Application extends Container
             $path       = '/';
         }
 
-        $this->pipeline->enqueue([
+        $this->queue->enqueue([
             'path' => $this->normalizePipePath($path),
             'middleware' => $middleware
         ]);
