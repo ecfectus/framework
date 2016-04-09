@@ -14,11 +14,15 @@ use Ecfectus\Container\Container;
 use Ecfectus\Container\ReflectionContainer;
 use Ecfectus\Container\ServiceProviderContainer;
 use Ecfectus\Config\ConfigServiceProvider;
+use Ecfectus\Event\EventServiceProvider;
 use Ecfectus\Router\Router;
 use Interop\Container\ContainerInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Component\EventDispatcher\Event;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\GenericEvent;
 use Zend\Diactoros\Server;
 
 class Application extends Container
@@ -27,6 +31,8 @@ class Application extends Container
     protected $hasBeenBootstrapped = false;
 
     protected $queue = null;
+
+    protected $dispatcher = null;
 
     public function __construct($path = ''){
 
@@ -45,8 +51,12 @@ class Application extends Container
         $this->share('path', $path);
         $this->share('path.config', $path . DIRECTORY_SEPARATOR . 'config');
 
-        // add config service provider as everything else will rely on it
+        // add config and event service providers as everything else will rely on them
         $this->addServiceProvider(ConfigServiceProvider::class);
+
+        $this->addServiceProvider(EventServiceProvider::class);
+
+        $this->dispatcher = $this->get(EventDispatcherInterface::class);
 
         $this->queue = new \SplQueue();
     }
@@ -161,6 +171,8 @@ class Application extends Container
             return;
         }
 
+        $this->dispatcher->dispatch('bootstrap.before', new GenericEvent($this));
+
         $this->hasBeenBootstrapped = true;
 
         $providers = $this->get(RepositoryInterface::class)->get('app.providers');
@@ -170,49 +182,53 @@ class Application extends Container
         }
 
         $this->bootServiceProviders();
+
+        $this->dispatcher->dispatch('bootstrap.after', new GenericEvent($this));
     }
 
     public function listen(){
 
-        echo 'working';
-
         $this->bootstrap();
+
+        $dispatcher = $this->getContainer()->get(EventDispatcherInterface::class);
+
+        $dispatcher->addListener('listen', function(Event $event){
+            $app = $event->getSubject();
+            $router = $app->get(Router::class);
+            $app->push(function($request, $response, $next) use ($router) {
+
+                $route = $router->matchRequest($request);
+
+                switch($route[0]){
+                    case 0:
+                        $response = $response->withStatus(404);
+                        break;
+                    case 1:
+                        $request = $request->withAttribute('route', $route[1]);
+                        foreach((array) $route[2] as $key => $val){
+                            $request = $request->withAttribute($key, $val);
+                        }
+                        //add any route middleware
+                        foreach($route[1]->getMiddleware() as $middleware){
+                            $this->push($middleware);
+                        }
+                        //then finally add the route handler
+                        $this->push($route[1]->getCallable());
+                        break;
+                    case 2:
+                        $response = $response->withStatus(405)->withHeader('Allow', implode(', ', $route[1]));
+                        break;
+                }
+
+                return $next($request, $response);
+            });
+        });
+
+        $this->dispatcher->dispatch('listen', new GenericEvent($this));
 
         $request = $this->get(ServerRequestInterface::class);
 
         $response = $this->get(ResponseInterface::class);
-
-
-        // add route matching after bootstrap
-        $this->queue->add(0, ['path' => '/', 'middleware' => function($request, $response, $next){
-
-            $router = $this->get(Router::class);
-
-            $route = $router->matchRequest($request);
-
-            switch($route[0]){
-                case 0:
-                    $response = $response->withStatus(404);
-                    break;
-                case 1:
-                    $request = $request->withAttribute('route', $route[1]);
-                    foreach((array) $route[2] as $key => $val){
-                        $request = $request->withAttribute($key, $val);
-                    }
-                    //add any route middleware
-                    foreach($route[1]->getMiddleware() as $middleware){
-                        $this->push($middleware);
-                    }
-                    //then finally add the route handler
-                    $this->push($route[1]->getCallable());
-                    break;
-                case 2:
-                    $response = $response->withStatus(405)->withHeader('Allow', implode(', ', $route[1]));
-                    break;
-            }
-
-            return $next($request, $response);
-        }]);
 
         $server = new Server($this, $request, $response);
 
