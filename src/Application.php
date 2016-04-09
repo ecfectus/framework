@@ -6,7 +6,7 @@
  * Time: 19:44
  */
 
-namespace Ecfectus\Framework;
+namespace Ecfectus;
 
 
 use Ecfectus\Config\RepositoryInterface;
