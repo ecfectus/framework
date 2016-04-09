@@ -40,7 +40,11 @@ class Kernel
 
     public function handle(RequestInterface $request, ResponseInterface $response){
 
-        //first we find the route, and if not set the status codes
+        // we create the middleware runner
+
+        $this->runner = new Runner($this->middleware);
+
+        // then we find the route, and if not set the status codes
 
         $router = $this->app->get(Router::class);
 
@@ -55,23 +59,17 @@ class Kernel
                 foreach((array) $route[2] as $key => $val){
                     $request = $request->withAttribute($key, $val);
                 }
+                //add any route middleware
+                foreach($route[1]->getMiddleware() as $middleware){
+                    $this->runner->addMiddleware($middleware);
+                }
                 break;
             case 2:
                 $response = $response->withStatus(405)->withHeader('Allow', implode(', ', $route[1]));
                 break;
         }
 
-        // then we create the middleware runner
-
-        $this->runner = new Runner($this->middleware);
-
         $this->runner->setContainer($this->app);
-
-
-        $this->runner->addMiddleware(function($request, $response, $next) {
-
-            return $response->getBody()->write(print_r($request, true));
-        });
 
         // and run the middlewares against the request
 
