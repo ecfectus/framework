@@ -6,39 +6,33 @@
  * Time: 19:44
  */
 
-namespace Ecfectus;
+namespace Ecfectus\Framework;
 
 
-use Ecfectus\Config\RepositoryInterface;
 use Ecfectus\Container\Container;
+use Ecfectus\Container\ContainerInterface;
 use Ecfectus\Container\ReflectionContainer;
 use Ecfectus\Container\ServiceProviderContainer;
-use Ecfectus\Config\ConfigServiceProvider;
-use Ecfectus\Event\EventServiceProvider;
-use Ecfectus\Router\Router;
-use Interop\Container\ContainerInterface;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Symfony\Component\EventDispatcher\Event;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\EventDispatcher\GenericEvent;
-use Zend\Diactoros\Server;
+use Ecfectus\Events\DispatcherInterface;
+use Ecfectus\Framework\Bootstrap\Events\AfterBootstrap;
+use Ecfectus\Framework\Bootstrap\Events\BeforeBootstrap;
+use Ecfectus\Framework\Config\ConfigServiceProvider;
+use Ecfectus\Framework\Config\RepositoryInterface;
+use Ecfectus\Framework\Event\EventServiceProvider;
 
 class Application extends Container
 {
 
     protected $hasBeenBootstrapped = false;
 
-    protected $queue = null;
-
-    protected $dispatcher = null;
-
     public function __construct($path = ''){
 
-        $this->delegate(new ServiceProviderContainer());
+        $this->share(ReflectionContainer::class, new ReflectionContainer());
+        $this->share(ServiceProviderContainer::class, new ServiceProviderContainer());
 
-        $this->delegate(new ReflectionContainer());
+        $this->delegate($this->get(ServiceProviderContainer::class));
+
+        $this->delegate($this->get(ReflectionContainer::class));
 
         // bind self into self - trippy
         $this->share(Application::class, $this);
@@ -46,6 +40,7 @@ class Application extends Container
         $this->share('app', $this);
 
         $this->share(ContainerInterface::class, $this);
+        $this->share(\Interop\Container\ContainerInterface::class, $this);
 
         // bind the paths
         $this->share('path', $path);
@@ -56,9 +51,6 @@ class Application extends Container
 
         $this->addServiceProvider(EventServiceProvider::class);
 
-        $this->dispatcher = $this->get(EventDispatcherInterface::class);
-
-        $this->queue = new \SplQueue();
     }
 
     public function resolve($entry){
@@ -80,87 +72,12 @@ class Application extends Container
         return $this->get($entry);
     }
 
-    public function push($path, $middleware = null){
-
-        if (null === $middleware) {
-            $middleware = $path;
-            $path       = '/';
-        }
-
-        $this->queue->enqueue([
-            'path' => $this->normalizePipePath($path),
-            'middleware' => $middleware
-        ]);
-
-        return $this;
-    }
-
-    /**
-     * Run the added middlewares
-     *
-     * @param RequestInterface $request
-     * @param ResponseInterface $response
-     * @return Response
-     */
-    public function __invoke(RequestInterface $request, ResponseInterface $response)
-    {
-
-        if($this->queue->isEmpty()){
-            return $response;
-        }
-
-        $entry = $this->queue->dequeue();
-
-        if(!$this->isValidForPath($entry['path'], $request)){
-            return $this($request, $response, $this);
-        }
-
-        $middleware = $this->resolve($entry['middleware']);
-
-        return $middleware($request, $response, $this);
-    }
-
-    private function isValidForPath($path, RequestInterface $request){
-        if($path == '/'){
-            return true;
-        }
-
-        $requestPath = $request->getUri()->getPath() ?: '/';
-
-        if (substr(strtolower($requestPath), 0, strlen($path)) === strtolower($path)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Normalize a path used when defining a pipe
-     *
-     * Strips trailing slashes, and prepends a slash.
-     *
-     * @param string $path
-     * @return string
-     */
-    private function normalizePipePath($path)
-    {
-        // Prepend slash if missing
-        if (empty($path) || $path[0] !== '/') {
-            $path = '/' . $path;
-        }
-        // Trim trailing slash if present
-        if (strlen($path) > 1 && '/' === substr($path, -1)) {
-            $path = rtrim($path, '/');
-        }
-        return $path;
-    }
-
     /**
      * Determine if the application has been bootstrapped before.
      *
      * @return bool
      */
-    public function hasBeenBootstrapped()
+    public function hasBeenBootstrapped() : bool
     {
         return $this->hasBeenBootstrapped;
     }
@@ -171,7 +88,7 @@ class Application extends Container
             return;
         }
 
-        $this->dispatcher->dispatch('bootstrap.before', new GenericEvent($this));
+        $this->get(DispatcherInterface::class)->fire(new BeforeBootstrap($this));
 
         $this->hasBeenBootstrapped = true;
 
@@ -183,56 +100,7 @@ class Application extends Container
 
         $this->bootServiceProviders();
 
-        $this->dispatcher->dispatch('bootstrap.after', new GenericEvent($this));
-    }
-
-    public function listen(){
-
-        $this->bootstrap();
-
-        $dispatcher = $this->getContainer()->get(EventDispatcherInterface::class);
-
-        $dispatcher->addListener('listen', function(Event $event){
-            $app = $event->getSubject();
-            $router = $app->get(Router::class);
-            $app->push(function($request, $response, $next) use ($router) {
-
-                $route = $router->matchRequest($request);
-
-                switch($route[0]){
-                    case 0:
-                        $response = $response->withStatus(404);
-                        break;
-                    case 1:
-                        $request = $request->withAttribute('route', $route[1]);
-                        foreach((array) $route[2] as $key => $val){
-                            $request = $request->withAttribute($key, $val);
-                        }
-                        //add any route middleware
-                        foreach($route[1]->getMiddleware() as $middleware){
-                            $this->push($middleware);
-                        }
-                        //then finally add the route handler
-                        $this->push($route[1]->getCallable());
-                        break;
-                    case 2:
-                        $response = $response->withStatus(405)->withHeader('Allow', implode(', ', $route[1]));
-                        break;
-                }
-
-                return $next($request, $response);
-            });
-        });
-
-        $this->dispatcher->dispatch('listen', new GenericEvent($this));
-
-        $request = $this->get(ServerRequestInterface::class);
-
-        $response = $this->get(ResponseInterface::class);
-
-        $server = new Server($this, $request, $response);
-
-        $server->listen();
+        $this->get(DispatcherInterface::class)->fire(new AfterBootstrap($this));
     }
 
 }

@@ -2,42 +2,43 @@
 /**
  * Created by PhpStorm.
  * User: leemason
- * Date: 08/04/16
- * Time: 20:59
+ * Date: 11/10/16
+ * Time: 16:58
  */
 
-namespace Ecfectus\Http;
+namespace Ecfectus\Framework\Http;
 
 
+use Ecfectus\Container\ContainerInterface;
 use Ecfectus\Container\ServiceProvider\AbstractServiceProvider;
-use Ecfectus\Router\Router;
-use FastRoute\RouteParser\Std;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Zend\Diactoros\Response;
-use Zend\Diactoros\ServerRequestFactory;
-use FastRoute\DataGenerator\GroupCountBased;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class HttpServiceProvider extends AbstractServiceProvider
 {
 
     public $provides = [
-        ServerRequestInterface::class,
-        ResponseInterface::class,
-        Router::class
+        KernelInterface::class
     ];
 
-    public function register(){
-        $this->bind(ServerRequestInterface::class, function(){
-           return ServerRequestFactory::fromGlobals();
+    public function register()
+    {
+        $this->share(KernelInterface::class, [function(ContainerInterface $app) {
+
+            return new Kernel($app);
+
+        }, ContainerInterface::class]);
+
+        $this->bind(Request::class, function(){
+            return new Request();
         });
 
-        $this->bind(ResponseInterface::class, function(){
+        $this->bind('server.request', function(){
+            return Request::createFromGlobals();
+        });
+
+        $this->bind(Response::class, function(){
             return new Response();
-        });
-
-        $this->share(Router::class, function(){
-            return new Router(new Std(), new GroupCountBased());
         });
     }
 

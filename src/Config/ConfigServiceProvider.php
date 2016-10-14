@@ -6,9 +6,10 @@
  * Time: 19:53
  */
 
-namespace Ecfectus\Config;
+namespace Ecfectus\Framework\Config;
 
 use Ecfectus\Container\ServiceProvider\AbstractServiceProvider;
+use Symfony\Component\Finder\Finder;
 
 class ConfigServiceProvider extends AbstractServiceProvider
 {
@@ -19,14 +20,16 @@ class ConfigServiceProvider extends AbstractServiceProvider
 
     public function register()
     {
-        $this->share(RepositoryInterface::class, [function($path)
-        {
+        $this->share(RepositoryInterface::class, [function($path) {
 
-            return new Repository(
-                new FileLoader(
-                    $path
-                )
-            );
+            $data = [];
+            $configPath = realpath($path);
+            foreach (Finder::create()->files()->name('*.php')->in($configPath) as $file) {
+                $name = $file->getBasename('.php');
+                $data[$name] = require $file->getRealPath();
+            }
+
+            return new Repository($data);
 
         }, 'path.config']);
     }

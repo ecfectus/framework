@@ -2,6 +2,7 @@
     "name": "ecfectus/framework",
     "description": "The Ecfectus Framework",
     "license": "MIT",
+    "homepage": "https://github.com/ecfectus/framework",
     "authors": [
         {
             "name": "leemason",
@@ -10,27 +11,34 @@
     ],
     "minimum-stability": "dev",
     "require": {
-        "container-interop/container-interop": "^1.1",
-        "zendframework/zend-diactoros": "~1.3@dev",
-        "nikic/fast-route": "dev-master",
-        "anahkiasen/underscore-php": "dev-master",
-        "psr/http-message": "~1.0@dev"
+        "php": ">=7.0.0",
+        "ecfectus/cache": "dev-master",
+        "ecfectus/manager": "dev-master",
+        "ecfectus/events": "dev-master",
+        "ecfectus/dotable": "dev-master",
+        "ecfectus/collection": "dev-master",
+        "ecfectus/container": "dev-master",
+        "ecfectus/pipeline": "dev-master",
+        "symfony/http-foundation": "^3.1",
+        "ecfectus/router": "dev-master"
     },
     "require-dev": {
-        "phpunit/phpunit" : "4.*",
+        "phpunit/phpunit" : "^5.5.0",
+        "phpdocumentor/phpdocumentor": "2.*",
         "fabpot/php-cs-fixer": "~1.10"
     },
     "autoload": {
         "psr-4": {
-            "Ecfectus\\": "src"
+            "Ecfectus\\Framework\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Ecfectus\\Test\\": "tests"
+            "Ecfectus\\Framework\\Test\\": "tests"
         }
     },
-    "provide": {
-        "container-interop/container-interop-implementation": "^1.1"
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "docs": "vendor/bin/phpdoc"
     }
 }

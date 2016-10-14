@@ -2,89 +2,149 @@
 /**
  * Created by PhpStorm.
  * User: leemason
- * Date: 08/04/16
- * Time: 19:43
+ * Date: 11/10/16
+ * Time: 16:50
  */
 
-namespace Ecfectus\Http;
+namespace Ecfectus\Framework\Http;
 
 
-use Ecfectus\Application;
-use Ecfectus\Http\Runner;
-use Ecfectus\Router\Route;
-use Ecfectus\Router\Router;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\Server;
+use Ecfectus\Container\ContainerInterface;
+use Ecfectus\Pipeline\LastArgumentPipeline;
+use Ecfectus\Pipeline\PipelineInterface;
+use Ecfectus\Router\MethodNotAllowedException;
+use Ecfectus\Router\NotFoundException;
+use Ecfectus\Router\RouterInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
-class Kernel
+class Kernel implements KernelInterface
 {
-    protected $app;
+    /**
+     * @var ContainerInterface|null
+     */
+    protected $app = null;
 
-    protected $server;
+    /**
+     * Global middleware to run on every request.
+     *
+     * @var array
+     */
+    public $globalMiddleware = [
 
-    protected $middleware = [];
+    ];
 
-    public function __construct(Application $app){
+    /**
+     * Named middleware to be used selectively via routes.
+     *
+     * @var array
+     */
+    public $middleware = [
+
+    ];
+
+    /**
+     * @param ContainerInterface $app
+     */
+    public function __construct(ContainerInterface $app)
+    {
         $this->app = $app;
     }
 
-    public function pushMiddleware($middleware){
-        $this->middleware[] = $middleware;
-        return $this;
+    /**
+     * @inheritDoc
+     */
+    public function handle(Request $request) : Response
+    {
+        try{
+            $request->enableHttpMethodParameterOverride();
+
+            $router = $this->app->get(RouterInterface::class);
+
+            $router->prepare();
+
+            $response = $this->app->get(Response::class);
+
+            $pipeline = $this->createPipeline();
+
+            try{
+
+                $route = $router->match($request->getHost() . $request->getPathInfo(), $request->getMethod());
+
+                $request->attributes->add(['route' => $route]);
+
+                $pipeline->push($this->buildRouteHandler($route->getHandler()));
+
+            }catch( NotFoundException $e){
+                $response->setStatusCode(404);
+            }catch( MethodNotAllowedException $e){
+                return $response->setStatusCode(405)
+                    ->headers->set('ALLOW', implode(', ', $e->getMethods()));
+            }
+
+            $response = $pipeline($request, $response);
+
+            return $response->prepare($request);
+
+        }catch( \Throwable $e ){
+            //throw $e;
+            return $this->app->get(Response::class)
+                ->setStatucCode(500)
+                ->setContent($e->getMessage())
+                ->prepare($request);
+        }
     }
 
-    public function prependMiddleware($middleware){
-        array_unshift($this->middleware, $middleware);
-        return $this;
+    private function createPipeline() : PipelineInterface
+    {
+        $pipeline = $this->app->get(LastArgumentPipeline::class);
+        foreach($this->globalMiddleware as $middleware){
+            $pipeline->push($middleware);
+        }
+        return $pipeline;
     }
 
-    public function handle(RequestInterface $request, ResponseInterface $response){
+    /**
+     * wrap the route handler in a closure so we can pass just the request and response objects, no need return through $next.
+     *
+     * @param $handler
+     * @return \Closure
+     */
+    private function buildRouteHandler($handler)
+    {
+        return function(Request $request, Response $response, callable $next) use ($handler){
+            $handler = $this->app->resolve($handler);
+            $response = $this->convertResponseIfNeeded($handler($request, $response), $response);
+            return $next($request, $response);
+        };
+    }
 
-        // we create the middleware runner
-
-        $this->runner = new Runner($this->middleware);
-
-        // then we find the route, and if not set the status codes
-
-        $router = $this->app->get(Router::class);
-
-        $route = $router->matchRequest($request);
-
-        switch($route[0]){
-            case 0:
-                $response = $response->withStatus(404);
-                break;
-            case 1:
-                $request = $request->withAttribute('route', $route[1]);
-                foreach((array) $route[2] as $key => $val){
-                    $request = $request->withAttribute($key, $val);
-                }
-                //add any route middleware
-                foreach($route[1]->getMiddleware() as $middleware){
-                    $this->runner->addMiddleware($middleware);
-                }
-                //then finally add the route handler
-                $this->runner->addMiddleware($route[1]->getCallable());
-                break;
-            case 2:
-                $response = $response->withStatus(405)->withHeader('Allow', implode(', ', $route[1]));
-                break;
+    private function convertResponseIfNeeded($result, $response)
+    {
+        if($result instanceof Response){
+            return $result;
         }
 
-        $this->runner->setContainer($this->app);
-
-        // and run the middlewares against the request
-
-        $this->server = new Server(function($request, $response, $done){
-
-            $runner = $this->runner;
-
-            return $runner($request, $response);
-
-        }, $request, $response);
-
-
-        $this->server->listen();
+        switch(gettype($result)){
+            case 'array':
+                $response->headers->set('Content-Type', 'application/json');
+                return $response->setContent(json_encode($result));
+                break;
+            case 'object':
+                $response->headers->set('Content-Type', 'application/json');
+                return $response->setContent(json_encode($result));
+                break;
+            default:
+                return $response->setContent((string) $result);
+        }
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function terminate()
+    {
+
+    }
+
 }

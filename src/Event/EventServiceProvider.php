@@ -2,27 +2,34 @@
 /**
  * Created by PhpStorm.
  * User: leemason
- * Date: 09/04/16
- * Time: 18:33
+ * Date: 11/10/16
+ * Time: 14:10
  */
 
-namespace Ecfectus\Event;
-
+namespace Ecfectus\Framework\Event;
 
 use Ecfectus\Container\ServiceProvider\AbstractServiceProvider;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Ecfectus\Events\Dispatcher;
+use Ecfectus\Events\DispatcherInterface;
+use Ecfectus\Framework\Application;
 
 class EventServiceProvider extends AbstractServiceProvider
 {
 
     public $provides = [
-        EventDispatcherInterface::class
+        DispatcherInterface::class
     ];
 
-    public function register(){
-        $this->share(EventDispatcherInterface::class, function(){
-            return new EventDispatcher();
-        });
+    public function register()
+    {
+        $this->share(DispatcherInterface::class, [function(Application $app) {
+
+            return (new Dispatcher())
+                ->setResolver(function($callback = null) use ($app){
+                    return $app->resolve($callback);
+                });
+
+        }, Application::class]);
     }
 
 }
