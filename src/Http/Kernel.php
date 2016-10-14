@@ -10,6 +10,8 @@ namespace Ecfectus\Framework\Http;
 
 
 use Ecfectus\Container\ContainerInterface;
+use Ecfectus\Events\Dispatcher;
+use Ecfectus\Framework\Http\Events\RouteMatched;
 use Ecfectus\Pipeline\LastArgumentPipeline;
 use Ecfectus\Pipeline\PipelineInterface;
 use Ecfectus\Router\MethodNotAllowedException;
@@ -71,6 +73,8 @@ class Kernel implements KernelInterface
 
                 $route = $router->match($request->getHost() . $request->getPathInfo(), $request->getMethod());
 
+                $this->app->get(Dispatcher::class)->fire(new RouteMatched($route));
+
                 $request->attributes->add(['route' => $route]);
 
                 $pipeline->push($this->buildRouteHandler($route->getHandler()));
@@ -78,8 +82,8 @@ class Kernel implements KernelInterface
             }catch( NotFoundException $e){
                 $response->setStatusCode(404);
             }catch( MethodNotAllowedException $e){
-                return $response->setStatusCode(405)
-                    ->headers->set('ALLOW', implode(', ', $e->getMethods()));
+                $response->headers->set('ALLOW', implode(', ', $e->getMethods()));
+                return $response->setStatusCode(405);
             }
 
             $response = $pipeline($request, $response);
@@ -89,7 +93,7 @@ class Kernel implements KernelInterface
         }catch( \Throwable $e ){
             //throw $e;
             return $this->app->get(Response::class)
-                ->setStatucCode(500)
+                ->setStatusCode(500)
                 ->setContent($e->getMessage())
                 ->prepare($request);
         }

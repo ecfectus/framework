@@ -65,11 +65,13 @@ class ApplicationTest extends TestCase
 
         $dispatcher = $this->prophesize(Dispatcher::class);
 
-        $dispatcher->fire(new BeforeBootstrap($app))->shouldBeCalled();
+        $dispatcher->fire(new BeforeBootstrap($app))->shouldBeCalledTimes(1);
 
-        $dispatcher->fire(new AfterBootstrap($app))->shouldBeCalled();
+        $dispatcher->fire(new AfterBootstrap($app))->shouldBeCalledTimes(1);
 
         $app->bind(DispatcherInterface::class, $dispatcher->reveal());
+
+        $app->bootstrap();
 
         $app->bootstrap();
     }

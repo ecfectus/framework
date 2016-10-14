@@ -9,10 +9,17 @@
 namespace Ecfectus\Framework\Test\Http;
 
 
+use Ecfectus\Events\DispatcherInterface;
+use Ecfectus\Events\Event;
 use Ecfectus\Framework\Application;
+use Ecfectus\Framework\Bootstrap\Events\AfterBootstrap;
+use Ecfectus\Framework\Bootstrap\Events\BeforeBootstrap;
+use Ecfectus\Framework\Http\Events\RouteMatched;
 use Ecfectus\Framework\Http\KernelInterface;
+use Ecfectus\Router\Route;
 use Ecfectus\Router\RouterInterface;
 use PHPUnit\Framework\TestCase;
+use Prophecy\Argument;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -123,6 +130,17 @@ class KernelTest extends TestCase
         $response = $kernel->handle($request);
 
         $this->assertEquals('testing route', $response->getContent());
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $request = Request::create(
+            '/',
+            'POST'
+        );
+
+        $response = $kernel->handle($request);
+
+        $this->assertEquals('HEAD, GET', $response->headers->get('ALLOW'));
+        $this->assertEquals(405, $response->getStatusCode());
     }
 
     public function testRouteHandlerResponseGetsConvertedFromArray()
@@ -201,6 +219,32 @@ class KernelTest extends TestCase
         $response = $kernel->handle(Request::create('/object', 'GET'));
         $this->assertEquals('application/json', $response->headers->get('Content-Type'));
         $this->assertEquals('{"zero":"1","one":"2","two":"3","three":"4"}', $response->getContent());
+    }
+
+
+    public function testExceptionGetsCaught()
+    {
+        $app = new Application(realpath(__DIR__ . '/../'));
+
+        $app->bootstrap();
+
+        $kernel = $app->get(KernelInterface::class);
+
+        $router = $app->get(RouterInterface::class);
+
+        $route = $router->get('/')->setHandler(function(Request $request, Response $response){
+            throw new \Exception('whoops!');
+        });
+
+        $request = Request::create(
+            '/',
+            'GET'
+        );
+
+        $response = $kernel->handle($request);
+
+        $this->assertEquals('whoops!', $response->getContent());
+        $this->assertEquals(500, $response->getStatusCode());
     }
 
 }
