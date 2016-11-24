@@ -10,8 +10,11 @@ namespace Ecfectus\Framework\Http;
 
 
 use Ecfectus\Container\ContainerInterface;
-use Ecfectus\Events\Dispatcher;
+use Ecfectus\Events\DispatcherInterface;
 use Ecfectus\Framework\Http\Events\RouteMatched;
+use Ecfectus\Framework\Http\Events\RouteMethodNotAllowed;
+use Ecfectus\Framework\Http\Events\RouteNotFound;
+use Ecfectus\Framework\Http\Events\Terminate;
 use Ecfectus\Pipeline\LastArgumentPipeline;
 use Ecfectus\Pipeline\PipelineInterface;
 use Ecfectus\Router\MethodNotAllowedException;
@@ -26,6 +29,16 @@ class Kernel implements KernelInterface
      * @var ContainerInterface|null
      */
     protected $app = null;
+
+    /**
+     * @var RouterInterface|null
+     */
+    protected $router = null;
+
+    /**
+     * @var DispatcherInterface|null
+     */
+    protected $events = null;
 
     /**
      * Global middleware to run on every request.
@@ -48,9 +61,11 @@ class Kernel implements KernelInterface
     /**
      * @param ContainerInterface $app
      */
-    public function __construct(ContainerInterface $app)
+    public function __construct(ContainerInterface $app, RouterInterface $router, DispatcherInterface $events)
     {
         $this->app = $app;
+        $this->router = $router;
+        $this->events = $events;
     }
 
     /**
@@ -61,9 +76,7 @@ class Kernel implements KernelInterface
         try{
             $request->enableHttpMethodParameterOverride();
 
-            $router = $this->app->get(RouterInterface::class);
-
-            $router->prepare();
+            $this->router->prepare();
 
             $response = $this->app->get(Response::class);
 
@@ -71,17 +84,25 @@ class Kernel implements KernelInterface
 
             try{
 
-                $route = $router->match($request->getHost() . $request->getPathInfo(), $request->getMethod());
+                $route = $this->router->match($request->getHost() . $request->getPathInfo(), $request->getMethod());
 
-                $this->app->get(Dispatcher::class)->fire(new RouteMatched($route));
+                $this->events->fire(new RouteMatched($route));
 
                 $request->attributes->add(['route' => $route]);
 
+                //add the routes middleware to the pipeline
+                foreach($route->getMiddleware() as $routeMiddleware){
+                    $pipeline->push($routeMiddleware);
+                }
+
+                //finally add the route handler to the pipeline as the last to act
                 $pipeline->push($this->buildRouteHandler($route->getHandler()));
 
             }catch( NotFoundException $e){
+                $this->events->fire(new RouteNotFound());
                 $response->setStatusCode(404);
             }catch( MethodNotAllowedException $e){
+                $this->events->fire(new RouteMethodNotAllowed($e));
                 $response->headers->set('ALLOW', implode(', ', $e->getMethods()));
                 return $response->setStatusCode(405);
             }
@@ -131,12 +152,11 @@ class Kernel implements KernelInterface
 
         switch(gettype($result)){
             case 'array':
-                $response->headers->set('Content-Type', 'application/json');
-                return $response->setContent(json_encode($result));
-                break;
             case 'object':
+                $result = json_encode($result);
                 $response->headers->set('Content-Type', 'application/json');
-                return $response->setContent(json_encode($result));
+                $response->headers->set('Content-Length', strlen($result));
+                return $response->setContent($result);
                 break;
             default:
                 return $response->setContent((string) $result);
@@ -146,9 +166,9 @@ class Kernel implements KernelInterface
     /**
      * @inheritDoc
      */
-    public function terminate()
+    public function terminate(Request $request, Response $response)
     {
-
+        $this->events->fire(new Terminate($request, $response));
     }
 
 }

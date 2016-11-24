@@ -16,16 +16,48 @@ use Ecfectus\Container\ServiceProviderContainer;
 use Ecfectus\Events\DispatcherInterface;
 use Ecfectus\Framework\Bootstrap\Events\AfterBootstrap;
 use Ecfectus\Framework\Bootstrap\Events\BeforeBootstrap;
+use Ecfectus\Framework\Bootstrap\LoadEnvValues;
 use Ecfectus\Framework\Config\ConfigServiceProvider;
 use Ecfectus\Framework\Config\RepositoryInterface;
 use Ecfectus\Framework\Event\EventServiceProvider;
 
 class Application extends Container
 {
+    protected static $instance = null;
 
     protected $hasBeenBootstrapped = false;
 
+    protected $bootstrappers = [
+        LoadEnvValues::class,
+    ];
+
+    /**
+     * Set the globally available instance of the container.
+     *
+     * @return static
+     */
+    public static function getInstance()
+    {
+        if (is_null(static::$instance)) {
+            static::$instance = new static;
+        }
+        return static::$instance;
+    }
+
+    /**
+     * Set the shared instance of the container.
+     *
+     * @param  Ecfectus\Container\ContainerInterface  $container
+     * @return static
+     */
+    public static function setInstance(ContainerInterface $container = null)
+    {
+        return static::$instance = $container;
+    }
+
     public function __construct($path = ''){
+
+        static::setInstance($this);
 
         $this->share(ReflectionContainer::class, new ReflectionContainer());
         $this->share(ServiceProviderContainer::class, new ServiceProviderContainer());
@@ -45,6 +77,7 @@ class Application extends Container
         // bind the paths
         $this->share('path', $path);
         $this->share('path.config', $path . DIRECTORY_SEPARATOR . 'config');
+        $this->share('path.storage', $path . DIRECTORY_SEPARATOR . 'storage');
 
         // add config and event service providers as everything else will rely on them
         $this->addServiceProvider(ConfigServiceProvider::class);
@@ -90,9 +123,11 @@ class Application extends Container
 
         $this->get(DispatcherInterface::class)->fire(new BeforeBootstrap($this));
 
+        $this->runBootstrappers();
+
         $this->hasBeenBootstrapped = true;
 
-        $providers = $this->get(RepositoryInterface::class)->get('app.providers');
+        $providers = $this->get(RepositoryInterface::class)->get('app.providers', []);
 
         foreach($providers as $provider){
             $this->addServiceProvider($provider);
@@ -101,6 +136,14 @@ class Application extends Container
         $this->bootServiceProviders();
 
         $this->get(DispatcherInterface::class)->fire(new AfterBootstrap($this));
+    }
+
+    private function runBootstrappers()
+    {
+        foreach ($this->bootstrappers as $bootstrapper) {
+            $bootstrapper = new $bootstrapper();
+            $bootstrapper->bootstrap($this);
+        }
     }
 
 }

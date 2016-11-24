@@ -64,6 +64,8 @@ class ApplicationTest extends TestCase
         $app = new Application(realpath(__DIR__ . '/'));
 
         $dispatcher = $this->prophesize(Dispatcher::class);
+        
+        $dispatcher->listen(Argument::type('string'), Argument::any())->shouldBeCalled();
 
         $dispatcher->fire(new BeforeBootstrap($app))->shouldBeCalledTimes(1);
 
@@ -92,6 +94,8 @@ class ApplicationTest extends TestCase
         $app = new Application(realpath(__DIR__ . '/'));
 
         $app->bootstrap();
+
+        $app->get(RepositoryInterface::class)->set('app.test', true);
 
         $cb = $app->resolve('Ecfectus\Framework\Config\RepositoryInterface@get');
 

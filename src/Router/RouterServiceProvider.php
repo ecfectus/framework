@@ -8,7 +8,6 @@
 
 namespace Ecfectus\Framework\Router;
 
-
 use Ecfectus\Container\ServiceProvider\AbstractServiceProvider;
 use Ecfectus\Router\Router;
 use Ecfectus\Router\RouterInterface;

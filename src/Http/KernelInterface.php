@@ -16,6 +16,6 @@ interface KernelInterface
 {
     public function handle(Request $request) : Response;
 
-    public function terminate();
+    public function terminate(Request $request, Response $response);
 
 }

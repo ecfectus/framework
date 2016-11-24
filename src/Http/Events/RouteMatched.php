@@ -10,14 +10,14 @@ namespace Ecfectus\Framework\Http\Events;
 
 
 use Ecfectus\Events\Event;
-use Ecfectus\Router\Route;
+use Ecfectus\Router\RouteInterface;
 
 class RouteMatched extends Event
 {
 
     public $route = null;
 
-    public function __construct(Route $route)
+    public function __construct(RouteInterface $route)
     {
         $this->route = $route;
     }

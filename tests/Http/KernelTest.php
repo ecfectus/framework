@@ -8,18 +8,10 @@
 
 namespace Ecfectus\Framework\Test\Http;
 
-
-use Ecfectus\Events\DispatcherInterface;
-use Ecfectus\Events\Event;
 use Ecfectus\Framework\Application;
-use Ecfectus\Framework\Bootstrap\Events\AfterBootstrap;
-use Ecfectus\Framework\Bootstrap\Events\BeforeBootstrap;
-use Ecfectus\Framework\Http\Events\RouteMatched;
 use Ecfectus\Framework\Http\KernelInterface;
-use Ecfectus\Router\Route;
 use Ecfectus\Router\RouterInterface;
 use PHPUnit\Framework\TestCase;
-use Prophecy\Argument;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -68,7 +60,7 @@ class KernelTest extends TestCase
         $this->assertInstanceOf(Response::class, $kernel->handle($app->get(Request::class)));
     }
 
-    public function testSendThroughPipelineWithMiddleware()
+    public function testSendThroughPipeline404()
     {
         $app = new Application(realpath(__DIR__ . '/../'));
 
@@ -85,6 +77,17 @@ class KernelTest extends TestCase
 
         $this->assertEquals(404, $response->getStatusCode());
 
+
+    }
+
+    public function testSendThroughPipelineWithMiddleware()
+    {
+
+        $app = new Application(realpath(__DIR__ . '/../'));
+
+        $app->bootstrap();
+
+        $kernel = $app->get(KernelInterface::class);
 
         $kernel->globalMiddleware[] = function(Request $request, Response $response, callable $next){
             $response->setStatusCode(301);
