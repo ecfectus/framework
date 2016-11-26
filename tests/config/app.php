@@ -3,6 +3,7 @@
 return [
     'providers' => [
         \Ecfectus\Framework\Http\HttpServiceProvider::class,
+        \Ecfectus\Framework\Session\SessionServiceProvider::class,
         \Ecfectus\Framework\Router\RouterServiceProvider::class,
         \Ecfectus\Framework\Pipeline\PipelineServiceProvider::class,
         \Ecfectus\Framework\Cache\CacheServiceProvider::class,

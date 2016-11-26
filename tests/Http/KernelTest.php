@@ -14,23 +14,25 @@ use Ecfectus\Router\RouterInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
+use Symfony\Component\HttpFoundation\Session\Storage\SessionStorageInterface;
 
 class Controller{
 
-    public function fromResponse(Request $request, Response $response){
-        $response->setContent('from response func');
+    public function fromResponse(Request $request){
+        $response = (new Response())->setContent('from response func');
         return $response;
     }
 
-    public function fromString(Request $request, Response $response){
+    public function fromString(Request $request){
         return 'from string func';
     }
 
-    public function fromArray(Request $request, Response $response){
+    public function fromArray(Request $request){
         return ['zero' => '1', 'one' => '2','two' => '3','three' => '4'];
     }
 
-    public function fromObject(Request $request, Response $response){
+    public function fromObject(Request $request){
         return (object) ['zero' => '1', 'one' => '2','two' => '3','three' => '4'];
     }
 }
@@ -38,35 +40,32 @@ class Controller{
 class KernelTest extends TestCase
 {
 
+    protected $app;
+
+    public function setUp()
+    {
+        parent::setUp();
+        $this->app = new Application(realpath(__DIR__ . '/../'));
+        $this->app->bootstrap();
+    }
+
     public function testConstructor()
     {
-        $app = new Application(realpath(__DIR__ . '/../'));
-
-        $app->bootstrap();
-
-        $kernel = $app->get(KernelInterface::class);
+        $kernel = $this->app->get(KernelInterface::class);
 
         $this->assertInstanceOf(KernelInterface::class, $kernel);
     }
 
     public function testSendThroughPipeline()
     {
-        $app = new Application(realpath(__DIR__ . '/../'));
+        $kernel = $this->app->get(KernelInterface::class);
 
-        $app->bootstrap();
-
-        $kernel = $app->get(KernelInterface::class);
-
-        $this->assertInstanceOf(Response::class, $kernel->handle($app->get(Request::class)));
+        $this->assertInstanceOf(Response::class, $kernel->handle($this->app->get(Request::class)));
     }
 
     public function testSendThroughPipeline404()
     {
-        $app = new Application(realpath(__DIR__ . '/../'));
-
-        $app->bootstrap();
-
-        $kernel = $app->get(KernelInterface::class);
+        $kernel = $this->app->get(KernelInterface::class);
 
         $request = Request::create(
             '/',
@@ -77,26 +76,21 @@ class KernelTest extends TestCase
 
         $this->assertEquals(404, $response->getStatusCode());
 
-
     }
 
     public function testSendThroughPipelineWithMiddleware()
     {
 
-        $app = new Application(realpath(__DIR__ . '/../'));
+        $kernel = $this->app->get(KernelInterface::class);
 
-        $app->bootstrap();
-
-        $kernel = $app->get(KernelInterface::class);
-
-        $kernel->globalMiddleware[] = function(Request $request, Response $response, callable $next){
-            $response->setStatusCode(301);
-            return $next($request, $response);
+        $kernel->globalMiddleware[] = function(Request $request, callable $next){
+            $response = $next($request);
+            return $response->setStatusCode(301);
         };
 
-        $kernel->globalMiddleware[] = function(Request $request, Response $response, callable $next){
-            $response->setContent('test middleware');
-            return $next($request, $response);
+        $kernel->globalMiddleware[] = function(Request $request, callable $next){
+            $response = $next($request);
+            return $response->setContent('test middleware');
         };
 
         $request = Request::create(
@@ -112,16 +106,12 @@ class KernelTest extends TestCase
 
     public function testRouteGetsMatchedThroughRouter()
     {
-        $app = new Application(realpath(__DIR__ . '/../'));
+        $kernel = $this->app->get(KernelInterface::class);
 
-        $app->bootstrap();
+        $router = $this->app->get(RouterInterface::class);
 
-        $kernel = $app->get(KernelInterface::class);
-
-        $router = $app->get(RouterInterface::class);
-
-        $route = $router->get('/')->setHandler(function(Request $request, Response $response){
-            $response->setContent('testing route');
+        $route = $router->get('/')->setHandler(function(Request $request){
+            $response = (new Response())->setContent('testing route');
             return $response;
         });
 
@@ -148,31 +138,27 @@ class KernelTest extends TestCase
 
     public function testRouteHandlerResponseGetsConvertedFromArray()
     {
-        $app = new Application(realpath(__DIR__ . '/../'));
+        $kernel = $this->app->get(KernelInterface::class);
 
-        $app->bootstrap();
+        $router = $this->app->get(RouterInterface::class);
 
-        $kernel = $app->get(KernelInterface::class);
-
-        $router = $app->get(RouterInterface::class);
-
-        $router->get('/object')->setHandler(function(Request $request, Response $response){
+        $router->get('/object')->setHandler(function(Request $request){
             return (object) ['zero' => '1', 'one' => '2','two' => '3','three' => '4'];
         });
 
-        $router->get('/array')->setHandler(function(Request $request, Response $response){
+        $router->get('/array')->setHandler(function(Request $request){
             return ['zero' => '1', 'one' => '2','two' => '3','three' => '4'];
         });
 
-        $router->get('/int')->setHandler(function(Request $request, Response $response){
+        $router->get('/int')->setHandler(function(Request $request){
             return 1;
         });
 
-        $router->get('/bool')->setHandler(function(Request $request, Response $response){
+        $router->get('/bool')->setHandler(function(Request $request){
             return true;
         });
 
-        $router->get('/float')->setHandler(function(Request $request, Response $response){
+        $router->get('/float')->setHandler(function(Request $request){
             return 0.5;
         });
 
@@ -196,13 +182,9 @@ class KernelTest extends TestCase
 
     public function testRouteHandlerFromController()
     {
-        $app = new Application(realpath(__DIR__ . '/../'));
+        $kernel = $this->app->get(KernelInterface::class);
 
-        $app->bootstrap();
-
-        $kernel = $app->get(KernelInterface::class);
-
-        $router = $app->get(RouterInterface::class);
+        $router = $this->app->get(RouterInterface::class);
 
         $router->get('/response')->setHandler('Ecfectus\Framework\Test\Http\Controller@fromResponse');
         $router->get('/string')->setHandler('Ecfectus\Framework\Test\Http\Controller@fromString');
@@ -227,15 +209,11 @@ class KernelTest extends TestCase
 
     public function testExceptionGetsCaught()
     {
-        $app = new Application(realpath(__DIR__ . '/../'));
+        $kernel = $this->app->get(KernelInterface::class);
 
-        $app->bootstrap();
+        $router = $this->app->get(RouterInterface::class);
 
-        $kernel = $app->get(KernelInterface::class);
-
-        $router = $app->get(RouterInterface::class);
-
-        $route = $router->get('/')->setHandler(function(Request $request, Response $response){
+        $route = $router->get('/')->setHandler(function(Request $request){
             throw new \Exception('whoops!');
         });
 
@@ -248,6 +226,83 @@ class KernelTest extends TestCase
 
         $this->assertEquals('whoops!', $response->getContent());
         $this->assertEquals(500, $response->getStatusCode());
+    }
+
+
+    public function testSessionIsAdded()
+    {
+        $this->app->bind(SessionStorageInterface::class, new MockArraySessionStorage());
+
+        $kernel = $this->app->get(KernelInterface::class);
+
+        $router = $this->app->get(RouterInterface::class);
+
+        $route = $router->get('/')->setHandler(function(Request $request){
+            return $request->hasSession();
+        })->setMiddleware([
+            'session'
+        ]);
+
+        $request = Request::create(
+            '/',
+            'GET'
+        );
+
+        $response = $kernel->handle($request);
+
+        $this->assertEquals('1', $response->getContent());
+    }
+
+    public function testSessionIsStarted()
+    {
+        $this->app->bind(SessionStorageInterface::class, new MockArraySessionStorage());
+
+        $kernel = $this->app->get(KernelInterface::class);
+
+        $router = $this->app->get(RouterInterface::class);
+
+        $route = $router->get('/')->setHandler(function(Request $request){
+            return $request->getSession()->isStarted();
+        })->setMiddleware([
+            'session'
+        ]);
+
+        $request = Request::create(
+            '/',
+            'GET'
+        );
+
+        $response = $kernel->handle($request);
+
+        $this->assertEquals('1', $response->getContent());
+    }
+
+    public function testSessionContainsData()
+    {
+        $this->app->bind(SessionStorageInterface::class, new MockArraySessionStorage());
+
+        $kernel = $this->app->get(KernelInterface::class);
+
+        $router = $this->app->get(RouterInterface::class);
+
+        $route = $router->get('/')->setHandler(function(Request $request){
+            return $request->getSession()->get('test');
+        })->setMiddleware([
+            'session',
+            function(Request $request, callable $next){
+                $request->getSession()->set('test', 'value');
+                return $next($request);
+            }
+        ]);
+
+        $request = Request::create(
+            '/',
+            'GET'
+        );
+
+        $response = $kernel->handle($request);
+
+        $this->assertEquals('value', $response->getContent());
     }
 
 }

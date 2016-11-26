@@ -64,7 +64,7 @@ class ApplicationTest extends TestCase
         $app = new Application(realpath(__DIR__ . '/'));
 
         $dispatcher = $this->prophesize(Dispatcher::class);
-        
+
         $dispatcher->listen(Argument::type('string'), Argument::any())->shouldBeCalled();
 
         $dispatcher->fire(new BeforeBootstrap($app))->shouldBeCalledTimes(1);
