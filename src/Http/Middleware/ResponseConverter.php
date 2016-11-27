@@ -14,7 +14,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ResponseConverter
 {
-
     public function __invoke(Request $request, callable $next)
     {
         $result = $next($request);
@@ -38,5 +37,4 @@ class ResponseConverter
                 return $response->setContent((string) $result);
         }
     }
-
 }

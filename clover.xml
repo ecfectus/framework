@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1480277624">
-  <project timestamp="1480277624">
+<coverage generated="1480278608">
+  <project timestamp="1480278608">
     <package name="Ecfectus\Framework">
       <file name="/Users/leemason/ecfectus/framework/src/Application.php">
         <class name="Application" namespace="Ecfectus\Framework">
@@ -301,22 +301,22 @@
         <class name="ResponseConverter" namespace="Ecfectus\Framework\Http\Middleware">
           <metrics complexity="4" methods="1" coveredmethods="1" conditionals="0" coveredconditionals="0" statements="14" coveredstatements="14" elements="15" coveredelements="15"/>
         </class>
-        <line num="18" type="method" name="__invoke" visibility="public" complexity="4" crap="4" count="10"/>
-        <line num="20" type="stmt" count="10"/>
-        <line num="22" type="stmt" count="9"/>
-        <line num="23" type="stmt" count="5"/>
+        <line num="17" type="method" name="__invoke" visibility="public" complexity="4" crap="4" count="10"/>
+        <line num="19" type="stmt" count="10"/>
+        <line num="21" type="stmt" count="9"/>
+        <line num="22" type="stmt" count="5"/>
+        <line num="25" type="stmt" count="5"/>
         <line num="26" type="stmt" count="5"/>
         <line num="27" type="stmt" count="5"/>
-        <line num="28" type="stmt" count="5"/>
+        <line num="28" type="stmt" count="2"/>
         <line num="29" type="stmt" count="2"/>
         <line num="30" type="stmt" count="2"/>
         <line num="31" type="stmt" count="2"/>
         <line num="32" type="stmt" count="2"/>
-        <line num="33" type="stmt" count="2"/>
+        <line num="35" type="stmt" count="5"/>
         <line num="36" type="stmt" count="5"/>
         <line num="37" type="stmt" count="5"/>
-        <line num="38" type="stmt" count="5"/>
-        <metrics loc="41" ncloc="35" classes="1" methods="1" coveredmethods="1" conditionals="0" coveredconditionals="0" statements="14" coveredstatements="14" elements="15" coveredelements="15"/>
+        <metrics loc="39" ncloc="33" classes="1" methods="1" coveredmethods="1" conditionals="0" coveredconditionals="0" statements="14" coveredstatements="14" elements="15" coveredelements="15"/>
       </file>
     </package>
     <package name="Ecfectus\Framework\Pipeline">
@@ -365,20 +365,22 @@
     <package name="Ecfectus\Framework\Session">
       <file name="/Users/leemason/ecfectus/framework/src/Session/SessionServiceProvider.php">
         <class name="SessionServiceProvider" namespace="Ecfectus\Framework\Session">
-          <metrics complexity="2" methods="2" coveredmethods="2" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="6" elements="8" coveredelements="8"/>
+          <metrics complexity="3" methods="2" coveredmethods="2" conditionals="0" coveredconditionals="0" statements="8" coveredstatements="8" elements="10" coveredelements="10"/>
         </class>
-        <line num="30" type="method" name="register" visibility="public" complexity="1" crap="1" count="3"/>
-        <line num="33" type="stmt" count="3"/>
-        <line num="34" type="stmt" count="3"/>
-        <line num="38" type="stmt" count="3"/>
-        <line num="42" type="stmt" count="3"/>
-        <line num="44" type="method" name="anonymous function" complexity="1" crap="1" count="3"/>
+        <line num="33" type="method" name="register" visibility="public" complexity="1" crap="1" count="3"/>
+        <line num="36" type="stmt" count="3"/>
+        <line num="37" type="stmt" count="3"/>
+        <line num="41" type="stmt" count="3"/>
         <line num="45" type="stmt" count="3"/>
-        <line num="46" type="stmt" count="3"/>
-        <line num="47" type="stmt" count="3"/>
-        <metrics loc="48" ncloc="42" classes="1" methods="2" coveredmethods="2" conditionals="0" coveredconditionals="0" statements="7" coveredstatements="7" elements="9" coveredelements="9"/>
+        <line num="48" type="stmt" count="3"/>
+        <line num="49" type="stmt" count="3"/>
+        <line num="50" type="stmt" count="3"/>
+        <line num="54" type="method" name="anonymous function" complexity="1" crap="1" count="15"/>
+        <line num="56" type="stmt" count="15"/>
+        <line num="57" type="stmt" count="15"/>
+        <metrics loc="58" ncloc="52" classes="1" methods="2" coveredmethods="2" conditionals="0" coveredconditionals="0" statements="9" coveredstatements="9" elements="11" coveredelements="11"/>
       </file>
     </package>
-    <metrics files="22" loc="1015" ncloc="785" classes="19" methods="37" coveredmethods="30" conditionals="0" coveredconditionals="0" statements="192" coveredstatements="169" elements="229" coveredelements="199"/>
+    <metrics files="22" loc="1023" ncloc="793" classes="19" methods="37" coveredmethods="30" conditionals="0" coveredconditionals="0" statements="194" coveredstatements="171" elements="231" coveredelements="201"/>
   </project>
 </coverage>

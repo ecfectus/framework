@@ -19,15 +19,14 @@
         "ecfectus/collection": "dev-master",
         "ecfectus/container": "dev-master",
         "ecfectus/pipeline": "dev-master",
-        "symfony/http-foundation": "^3.1",
         "ecfectus/router": "dev-master",
-        "league/plates": "^3.1",
+        "symfony/http-foundation": "^3.1",
         "vlucas/phpdotenv": "^2.4"
     },
     "require-dev": {
         "phpunit/phpunit" : "^5.5.0",
         "phpdocumentor/phpdocumentor": "2.*",
-        "fabpot/php-cs-fixer": "~1.10"
+        "friendsofphp/php-cs-fixer": "^1.12"
     },
     "autoload": {
         "files": [
