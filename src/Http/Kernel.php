@@ -15,6 +15,7 @@ use Ecfectus\Framework\Http\Events\RouteMatched;
 use Ecfectus\Framework\Http\Events\RouteMethodNotAllowed;
 use Ecfectus\Framework\Http\Events\RouteNotFound;
 use Ecfectus\Framework\Http\Events\Terminate;
+use Ecfectus\Framework\Http\Middleware\ResponseConverter;
 use Ecfectus\Framework\Session\Http\Middleware\StartSessionMiddleware;
 use Ecfectus\Pipeline\PipelineInterface;
 use Ecfectus\Router\MethodNotAllowedException;
@@ -46,7 +47,7 @@ class Kernel implements KernelInterface
      * @var array
      */
     public $globalMiddleware = [
-
+        ResponseConverter::class,
     ];
 
     /**
@@ -85,6 +86,8 @@ class Kernel implements KernelInterface
         try{
             $request->enableHttpMethodParameterOverride();
 
+            $this->app->bind(Request::class, $request);
+
             $this->router->prepare();
 
             $pipeline = $this->createPipeline();
@@ -98,7 +101,7 @@ class Kernel implements KernelInterface
             }catch( NotFoundException $e){
                 $this->events->fire(new RouteNotFound());
                 $pipeline->push(function(Request $request){
-                    return (new Response())->setStatusCode(404);
+                    return (new Response())->setStatusCode(404)->setContent('404 Not Found');
                 });
             }catch( MethodNotAllowedException $e){
                 $this->events->fire(new RouteMethodNotAllowed($e));
@@ -142,30 +145,8 @@ class Kernel implements KernelInterface
     {
         return function(Request $request) use ($handler){
             $handler = $this->app->resolve($handler);
-            return $this->convertResponseIfNeeded($handler($request));
+            return $handler($request);
         };
-    }
-
-    private function convertResponseIfNeeded($result)
-    {
-        if($result instanceof Response){
-            return $result;
-        }
-
-        switch(gettype($result)){
-            case 'array':
-            case 'object':
-                $result = json_encode($result);
-                $response = $this->app->get(Response::class);
-                $response->headers->set('Content-Type', 'application/json');
-                $response->headers->set('Content-Length', strlen($result));
-                return $response->setContent($result);
-                break;
-            default:
-                $response = $this->app->get(Response::class);
-                $response->headers->set('Content-Length', strlen((string) $result));
-                return $response->setContent((string) $result);
-        }
     }
 
     /**
