@@ -84,6 +84,8 @@ class Kernel implements KernelInterface
      */
     public function handle(Request $request) : Response
     {
+        $handler = $this->app->get(Handler::class);
+
         try{
             $request->enableHttpMethodParameterOverride();
 
@@ -102,16 +104,18 @@ class Kernel implements KernelInterface
 
             }catch( NotFoundException $e){
                 $this->events->fire(new RouteNotFound());
-                $pipeline->push(function(Request $request){
-                    return (new Response())->setStatusCode(404)->setContent('404 Not Found');
+                $pipeline->push(function(Request $request) use ($handler, $e){
+                    $handler->report($e);
+                    return $handler->render($request, $e, 404);
                 });
             }catch( MethodNotAllowedException $e){
                 $this->events->fire(new RouteMethodNotAllowed($e));
 
-                $pipeline->push(function(Request $request) use ($e){
-                    $response = new Response();
+                $pipeline->push(function(Request $request) use ($handler, $e){
+                    $handler->report($e);
+                    $response = $handler->render($request, $e, 405);
                     $response->headers->set('ALLOW', implode(', ', $e->getMethods()));
-                    return $response->setStatusCode(405);
+                    return $response;
                 });
             }
 
@@ -120,7 +124,8 @@ class Kernel implements KernelInterface
             return $response->prepare($request);
 
         }catch( \Throwable $e ){
-            return $this->app->get(Handler::class)->render($request, $e);
+            $handler->report($e);
+            return $handler->render($request, $e)->prepare($request);
         }
     }
 

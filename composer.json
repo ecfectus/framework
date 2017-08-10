@@ -11,7 +11,8 @@
     ],
     "minimum-stability": "dev",
     "require": {
-        "php": ">=7.0.0",
+        "php": ">=7.1.3",
+        "itsgoingd/clockwork": "~1.14",
         "ecfectus/cache": "dev-master",
         "ecfectus/manager": "dev-master",
         "ecfectus/events": "dev-master",

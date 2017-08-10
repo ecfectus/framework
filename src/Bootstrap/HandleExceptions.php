@@ -67,7 +67,7 @@ class HandleExceptions
 
     protected function renderHttpResponse(\Exception $e)
     {
-        $this->getExceptionHandler()->render($this->app->get('request'), $e)->send();
+        $this->getExceptionHandler()->render($this->app->get('request'), $e)->prepare($this->app->get('request'))->send();
     }
 
     public function handleShutdown()
