@@ -14,6 +14,7 @@ use Ecfectus\Container\ContainerInterface;
 use Ecfectus\Container\ReflectionContainer;
 use Ecfectus\Container\ServiceProviderContainer;
 use Ecfectus\Events\DispatcherInterface;
+use Ecfectus\Framework\Bootstrap\AddServiceProviders;
 use Ecfectus\Framework\Bootstrap\Events\AfterBootstrap;
 use Ecfectus\Framework\Bootstrap\Events\BeforeBootstrap;
 use Ecfectus\Framework\Bootstrap\HandleExceptions;
@@ -32,6 +33,7 @@ class Application extends Container
     protected $bootstrappers = [
         HandleExceptions::class,
         LoadEnvValues::class,
+        AddServiceProviders::class,
     ];
 
     /**
@@ -131,14 +133,6 @@ class Application extends Container
         $this->runBootstrappers();
 
         $this->hasBeenBootstrapped = true;
-
-        $providers = $this->get(RepositoryInterface::class)->get('app.providers', []);
-
-        foreach($providers as $provider){
-            $this->addServiceProvider($provider);
-        }
-
-        $this->bootServiceProviders();
 
         $this->get(DispatcherInterface::class)->fire(new AfterBootstrap($this));
     }

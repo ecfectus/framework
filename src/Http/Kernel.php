@@ -12,7 +12,10 @@ namespace Ecfectus\Framework\Http;
 use Ecfectus\Container\ContainerInterface;
 use Ecfectus\Events\DispatcherInterface;
 use Ecfectus\Framework\Exceptions\Handler;
+use Ecfectus\Framework\Http\Events\PipelineFinished;
+use Ecfectus\Framework\Http\Events\PipelineStarted;
 use Ecfectus\Framework\Http\Events\RouteMatched;
+use Ecfectus\Framework\Http\Events\RouteMatching;
 use Ecfectus\Framework\Http\Events\RouteMethodNotAllowed;
 use Ecfectus\Framework\Http\Events\RouteNotFound;
 use Ecfectus\Framework\Http\Events\Terminate;
@@ -84,13 +87,15 @@ class Kernel implements KernelInterface
      */
     public function handle(Request $request) : Response
     {
+        $this->events->fire(new RouteMatching());
+
+        $this->app->bind('request', $request);
+        $this->app->bind(Request::class, $request);
+
         $handler = $this->app->get(Handler::class);
 
         try{
             $request->enableHttpMethodParameterOverride();
-
-            $this->app->bind('request', $request);
-            $this->app->bind(Request::class, $request);
 
             $this->router->prepare();
 
@@ -119,7 +124,9 @@ class Kernel implements KernelInterface
                 });
             }
 
+            $this->events->fire(new PipelineStarted());
             $response = $pipeline($request);
+            $this->events->fire(new PipelineFinished());
 
             return $response->prepare($request);
 
@@ -191,7 +198,8 @@ class Kernel implements KernelInterface
         // If its named in the kernel groups
         if (is_string($routeMiddleware) && in_array($routeMiddleware, array_keys($this->middlewareGroups))) {
             foreach ($this->middlewareGroups[$routeMiddleware] as $groupMiddleware) {
-                $pipeline->push($groupMiddleware);
+                $this->pushToPipeline($pipeline, $groupMiddleware);
+                //$pipeline->push($groupMiddleware);
             }
             return;
         }

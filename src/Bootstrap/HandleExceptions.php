@@ -13,6 +13,7 @@ use Ecfectus\Framework\Exceptions\Handler;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Debug\Exception\FatalErrorException;
 use Symfony\Component\Debug\Exception\FatalThrowableError;
+use Symfony\Component\HttpFoundation\Request;
 
 class HandleExceptions
 {
@@ -67,7 +68,7 @@ class HandleExceptions
 
     protected function renderHttpResponse(\Exception $e)
     {
-        $this->getExceptionHandler()->render($this->app->get('request'), $e)->prepare($this->app->get('request'))->send();
+        $this->getExceptionHandler()->render($this->app->get(Request::class), $e)->prepare($this->app->get(Request::class))->send();
     }
 
     public function handleShutdown()
