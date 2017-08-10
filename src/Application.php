@@ -16,10 +16,12 @@ use Ecfectus\Container\ServiceProviderContainer;
 use Ecfectus\Events\DispatcherInterface;
 use Ecfectus\Framework\Bootstrap\Events\AfterBootstrap;
 use Ecfectus\Framework\Bootstrap\Events\BeforeBootstrap;
+use Ecfectus\Framework\Bootstrap\HandleExceptions;
 use Ecfectus\Framework\Bootstrap\LoadEnvValues;
 use Ecfectus\Framework\Config\ConfigServiceProvider;
 use Ecfectus\Framework\Config\RepositoryInterface;
 use Ecfectus\Framework\Event\EventServiceProvider;
+use Ecfectus\Framework\Exceptions\ExceptionsServiceProvider;
 
 class Application extends Container
 {
@@ -28,6 +30,7 @@ class Application extends Container
     protected $hasBeenBootstrapped = false;
 
     protected $bootstrappers = [
+        HandleExceptions::class,
         LoadEnvValues::class,
     ];
 
@@ -79,7 +82,9 @@ class Application extends Container
         $this->share('path.config', $path . DIRECTORY_SEPARATOR . 'config');
         $this->share('path.storage', $path . DIRECTORY_SEPARATOR . 'storage');
 
-        // add config and event service providers as everything else will rely on them
+        // add exceptions, config and event service providers as everything else will rely on them
+        $this->addServiceProvider(ExceptionsServiceProvider::class);
+
         $this->addServiceProvider(ConfigServiceProvider::class);
 
         $this->addServiceProvider(EventServiceProvider::class);
@@ -144,6 +149,11 @@ class Application extends Container
             $bootstrapper = new $bootstrapper();
             $bootstrapper->bootstrap($this);
         }
+    }
+
+    public function runningInConsole() : bool
+    {
+        return php_sapi_name() == 'cli' || php_sapi_name() == 'phpdbg';
     }
 
 }

@@ -11,6 +11,7 @@ namespace Ecfectus\Framework\Http;
 
 use Ecfectus\Container\ContainerInterface;
 use Ecfectus\Events\DispatcherInterface;
+use Ecfectus\Framework\Exceptions\Handler;
 use Ecfectus\Framework\Http\Events\RouteMatched;
 use Ecfectus\Framework\Http\Events\RouteMethodNotAllowed;
 use Ecfectus\Framework\Http\Events\RouteNotFound;
@@ -85,6 +86,8 @@ class Kernel implements KernelInterface
         try{
             $request->enableHttpMethodParameterOverride();
 
+            $this->app->bind('request', $request);
+
             $this->router->prepare();
 
             $pipeline = $this->createPipeline();
@@ -115,11 +118,7 @@ class Kernel implements KernelInterface
             return $response->prepare($request);
 
         }catch( \Throwable $e ){
-            //throw $e;
-            return $this->app->get(Response::class)
-                ->setStatusCode(500)
-                ->setContent($e->getMessage())
-                ->prepare($request);
+            return $this->app->get(Handler::class)->render($request, $e);
         }
     }
 

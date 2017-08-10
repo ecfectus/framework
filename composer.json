@@ -19,8 +19,10 @@
         "ecfectus/collection": "dev-master",
         "ecfectus/container": "dev-master",
         "ecfectus/pipeline": "dev-master",
+        "symfony/debug": "^3.3",
         "symfony/http-foundation": "^3.1",
         "ecfectus/router": "dev-master",
+        "flip/whoops": "2.*",
         "league/plates": "^3.1",
         "vlucas/phpdotenv": "^2.4"
     },
