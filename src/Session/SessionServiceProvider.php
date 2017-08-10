@@ -10,7 +10,10 @@ namespace Ecfectus\Framework\Session;
 
 
 use Ecfectus\Container\ServiceProvider\AbstractServiceProvider;
+use Ecfectus\Container\ServiceProvider\BootableServiceProviderInterface;
+use Ecfectus\Events\DispatcherInterface;
 use Ecfectus\Framework\Config\RepositoryInterface;
+use Ecfectus\Framework\Http\Events\Terminate;
 use Ecfectus\Framework\Session\Http\Middleware\StartSessionMiddleware;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
@@ -18,7 +21,7 @@ use Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeFileSessionHa
 use Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage;
 use Symfony\Component\HttpFoundation\Session\Storage\SessionStorageInterface;
 
-class SessionServiceProvider extends AbstractServiceProvider
+class SessionServiceProvider extends AbstractServiceProvider implements BootableServiceProviderInterface
 {
     public $provides = [
         SessionInterface::class,
@@ -44,6 +47,13 @@ class SessionServiceProvider extends AbstractServiceProvider
         $this->bind(StartSessionMiddleware::class, [function(SessionInterface $session){
             return new StartSessionMiddleware($session);
         }, SessionInterface::class]);
+    }
+
+    public function boot()
+    {
+        $this->getContainer()->get(DispatcherInterface::class)->listen(Terminate::class, function(Terminate $event){
+            $this->getContainer()->get(SessionInterface::class)->save();
+        });
     }
 
 }
